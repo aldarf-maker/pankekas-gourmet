@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Pankekas Controle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root{
+    --bg:#141210;
+    --surface:#1e1a16;
+    --surface-2:#282219;
+    --cream:#f7f1e6;
+    --cream-dim:#b8ae9c;
+    --orange:#e17a3b;
+    --gold:#c99a3e;
+    --line:#3a3227;
+    --green:#25d366;
+    --red:#d9534f;
+    --blue:#4a90d9;
+    --radius:14px;
+    --radius-sm:10px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--cream); font-family:'Sora',sans-serif;
+    min-height:100vh; padding-bottom:90px;
+  }
+  h1,h2,h3,.display{font-family:'Fredoka',sans-serif; font-weight:600;}
+  button{font-family:inherit;}
+
+  header.top{
+    padding:18px 16px 12px; text-align:center; position:sticky; top:0; z-index:30;
+    background:rgba(20,18,16,0.96); backdrop-filter:blur(6px); border-bottom:1px solid var(--line);
+  }
+  header.top h1{font-size:19px; margin:0; letter-spacing:0.3px;}
+  header.top h1 .accent{color:var(--orange);}
+  header.top .sub{font-size:11.5px; color:var(--cream-dim); margin-top:2px;}
+
+  nav.tabs{
+    display:flex; gap:6px; padding:10px 12px; position:sticky; top:62px; z-index:29;
+    background:var(--bg); border-bottom:1px solid var(--line); overflow-x:auto;
+  }
+  nav.tabs button{
+    flex:1; background:var(--surface); color:var(--cream-dim); border:1px solid var(--line);
+    padding:10px 8px; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;
+  }
+  nav.tabs button.active{background:var(--orange); border-color:var(--orange); color:#1a1109;}
+
+  main{padding:14px 14px 24px; max-width:640px; margin:0 auto;}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px; margin-bottom:12px;
+  }
+  .card h3{font-size:14px; margin:0 0 10px; color:var(--gold);}
+
+  textarea.paste-box{
+    width:100%; min-height:120px; background:var(--surface-2); border:1px solid var(--line);
+    color:var(--cream); border-radius:var(--radius-sm); padding:12px; font-size:13.5px; font-family:'Sora',sans-serif;
+    resize:vertical;
+  }
+  .btn{
+    border:none; border-radius:var(--radius-sm); padding:12px 16px; font-weight:700; font-size:14px;
+    cursor:pointer; font-family:'Fredoka',sans-serif;
+  }
+  .btn-primary{background:var(--orange); color:#1a1109; width:100%; margin-top:10px;}
+  .btn-primary:disabled{opacity:0.4;}
+  .btn-outline{background:none; border:1px solid var(--line); color:var(--cream-dim); width:100%; margin-top:8px;}
+  .btn-sm{padding:8px 12px; font-size:12.5px; border-radius:8px;}
+  .btn-green{background:var(--green); color:#0a1a0f;}
+  .btn-blue{background:var(--blue); color:#0a1420;}
+  .msg-line{font-size:12.5px; margin-top:8px; padding:8px 10px; border-radius:8px;}
+  .msg-ok{background:rgba(37,211,102,0.12); color:var(--green);}
+  .msg-err{background:rgba(217,83,79,0.12); color:var(--red);}
+
+  .summary-row{display:flex; gap:10px; margin-bottom:12px;}
+  .summary-card{
+    flex:1; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:12px 10px; text-align:center;
+  }
+  .summary-card .val{font-family:'Fredoka',sans-serif; font-size:17px; font-weight:600; color:var(--orange);}
+  .summary-card .val.green{color:var(--green);}
+  .summary-card .lbl{font-size:10.5px; color:var(--cream-dim); text-transform:uppercase; letter-spacing:0.3px; margin-top:3px;}
+
+  .order-row{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm);
+    padding:12px; margin-bottom:9px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:10px;
+  }
+  .order-row .info{flex:1; min-width:0;}
+  .order-row .num{font-size:11px; color:var(--cream-dim);}
+  .order-row .name{font-family:'Fredoka',sans-serif; font-size:15px; font-weight:600; margin:2px 0;}
+  .order-row .items-sum{font-size:12px; color:var(--cream-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .order-row .right{text-align:right; flex:0 0 auto;}
+  .order-row .val{font-family:'Fredoka',sans-serif; font-weight:700; color:var(--orange); font-size:14.5px;}
+  .badge{
+    display:inline-block; font-size:10px; font-weight:700; padding:3px 8px; border-radius:999px; margin-top:4px;
+  }
+  .badge.novo{background:rgba(74,144,217,0.18); color:var(--blue);}
+  .badge.preparo{background:rgba(201,154,62,0.18); color:var(--gold);}
+  .badge.saiu{background:rgba(225,122,59,0.18); color:var(--orange);}
+  .badge.entregue{background:rgba(37,211,102,0.18); color:var(--green);}
+  .badge.cancelado{background:rgba(217,83,79,0.18); color:var(--red);}
+  .badge.pendente{background:rgba(217,83,79,0.15); color:var(--red);}
+  .badge.recebido{background:rgba(37,211,102,0.18); color:var(--green);}
+
+  .empty{text-align:center; color:var(--cream-dim); font-size:13.5px; padding:26px 10px;}
+
+  /* Overlay / detail sheet */
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:flex-end; z-index:50;}
+  .overlay.show{display:flex;}
+  .sheet{background:var(--bg); width:100%; max-height:92vh; border-radius:20px 20px 0 0; display:flex; flex-direction:column; overflow:hidden; border-top:1px solid var(--line);}
+  .sheet-head{padding:16px 18px 10px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line);}
+  .sheet-head h3{margin:0; font-size:17px;}
+  .sheet-head button{background:none; border:none; color:var(--cream-dim); font-size:20px; cursor:pointer;}
+  .sheet-body{padding:16px 18px; overflow-y:auto; flex:1;}
+  .sheet-foot{padding:12px 18px 20px; border-top:1px solid var(--line);}
+
+  .detail-row{display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--line); font-size:13.5px; gap:10px;}
+  .detail-row:last-child{border-bottom:none;}
+  .detail-row .k{color:var(--cream-dim); flex:0 0 auto;}
+  .detail-row .v{text-align:right; font-weight:600;}
+
+  .status-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px;}
+  .status-grid button{
+    background:var(--surface-2); border:1px solid var(--line); color:var(--cream-dim);
+    padding:10px 6px; border-radius:9px; font-size:12.5px; font-weight:600; cursor:pointer;
+  }
+  .status-grid button.sel{background:var(--orange); border-color:var(--orange); color:#1a1109;}
+
+  input[type=text], input[type=file], input[type=date], select{
+    width:100%; background:var(--surface-2); border:1px solid var(--line); color:var(--cream);
+    border-radius:var(--radius-sm); padding:10px 12px; font-size:13.5px; font-family:'Sora',sans-serif; margin-top:4px;
+  }
+  label{display:block; font-size:12px; color:var(--cream-dim); margin:12px 0 2px; font-weight:600;}
+
+  .bank-row{
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    background:var(--surface-2); border:1px solid var(--line); border-radius:9px; padding:9px 11px; margin-bottom:7px; font-size:12.5px;
+  }
+  .bank-row .d{color:var(--cream-dim); font-size:11px;}
+  .bank-row .amt{font-weight:700; color:var(--green); font-family:'Fredoka',sans-serif;}
+  .bank-row.matched{opacity:0.5;}
+
+  .match-suggest{
+    background:rgba(37,211,102,0.08); border:1px solid rgba(37,211,102,0.3); border-radius:9px;
+    padding:10px; margin-bottom:8px; font-size:12.5px;
+  }
+  .match-suggest .btn-sm{margin-top:6px;}
+
+  .filter-row{display:flex; gap:6px; margin-bottom:10px; overflow-x:auto;}
+  .filter-row button{
+    background:var(--surface); border:1px solid var(--line); color:var(--cream-dim);
+    padding:7px 12px; border-radius:999px; font-size:12px; font-weight:600; white-space:nowrap; cursor:pointer;
+  }
+  .filter-row button.active{background:var(--gold); border-color:var(--gold); color:#1a1109;}
+
+  footer.foot{text-align:center; padding:20px; color:var(--cream-dim); font-size:11px;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>PANKEKAS <span class="accent">CONTROLE</span></h1>
+  <div class="sub">Financeiro da pankecaria</div>
+</header>
+
+<nav class="tabs" id="tabNav">
+  <button data-tab="pedidos" class="active">📋 Pedidos</button>
+  <button data-tab="financeiro">💰 Financeiro</button>
+  <button data-tab="pagar">💸 Contas a pagar</button>
+  <button data-tab="conciliacao">🏦 Conciliação</button>
+  <button data-tab="relatorio">📊 Relatório</button>
+</nav>
+
+<main>
+
+  <!-- PEDIDOS -->
+  <section class="view active" id="view-pedidos">
+    <div class="card">
+      <h3>Colar novo pedido</h3>
+      <textarea class="paste-box" id="pasteBox" placeholder="Cole aqui o texto do pedido recebido no WhatsApp..."></textarea>
+      <button class="btn btn-primary" onclick="addOrderFromPaste()">Adicionar pedido</button>
+      <div id="pasteMsg"></div>
+    </div>
+
+    <div class="filter-row" id="orderFilterRow"></div>
+    <div id="ordersList"></div>
+  </section>
+
+  <!-- FINANCEIRO -->
+  <section class="view" id="view-financeiro">
+    <div class="summary-row">
+      <div class="summary-card"><div class="val" id="sumPendente">R$ 0,00</div><div class="lbl">A receber</div></div>
+      <div class="summary-card"><div class="val green" id="sumRecebido">R$ 0,00</div><div class="lbl">Recebido</div></div>
+    </div>
+    <div class="filter-row" id="finFilterRow"></div>
+    <div id="receivablesList"></div>
+  </section>
+
+  <!-- CONTAS A PAGAR -->
+  <section class="view" id="view-pagar">
+    <div class="card">
+      <h3>Nova conta a pagar</h3>
+      <label>Descrição</label>
+      <input type="text" id="payDesc" placeholder="Ex: MEI, Fornecedor de embalagens, Aluguel...">
+      <label>Valor (R$)</label>
+      <input type="text" id="payValor" placeholder="0,00" inputmode="decimal">
+      <label>Tipo</label>
+      <select id="payTipo" onchange="togglePayTipoFields()">
+        <option value="recorrente">Recorrente (todo mês)</option>
+        <option value="unico">Única</option>
+      </select>
+      <div id="payRecorrenteFields">
+        <label>Dia de vencimento (todo mês)</label>
+        <input type="text" id="payDia" placeholder="Ex: 20" inputmode="numeric" maxlength="2">
+      </div>
+      <div id="payUnicoFields" style="display:none;">
+        <label>Data de vencimento</label>
+        <input type="date" id="payData">
+      </div>
+      <label>Categoria</label>
+      <input type="text" id="payCategoria" placeholder="Ex: Imposto, Fornecedor, Aluguel...">
+      <button class="btn btn-primary" onclick="addPayable()">Adicionar conta</button>
+      <div id="payMsg"></div>
+    </div>
+
+    <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <button class="btn-outline btn-sm" style="width:auto;" onclick="shiftPayMonth(-1)">‹ Mês anterior</button>
+      <button class="btn-outline btn-sm" style="width:auto;" onclick="shiftPayMonth(1)">Próximo mês ›</button>
+    </div>
+    <p style="text-align:center; font-family:'Fredoka',sans-serif; font-weight:600; text-transform:capitalize; margin:-4px 0 10px;" id="payMonthLabel"></p>
+
+    <div class="summary-row">
+      <div class="summary-card"><div class="val" id="payPendenteMes">R$ 0,00</div><div class="lbl">Pendente no mês</div></div>
+      <div class="summary-card"><div class="val green" id="payPagoMes">R$ 0,00</div><div class="lbl">Pago no mês</div></div>
+    </div>
+
+    <div id="payablesList"></div>
+  </section>
+
+  <!-- CONCILIAÇÃO -->
+  <section class="view" id="view-conciliacao">
+    <div class="card">
+      <h3>Importar extrato Sicredi (PDF)</h3>
+      <input type="file" id="bankFile" accept="application/pdf">
+      <button class="btn btn-primary" onclick="importBankPdf()">Importar extrato</button>
+      <div id="bankMsg"></div>
+    </div>
+
+    <div class="card" id="matchesCard" style="display:none;">
+      <h3>Sugestões de conciliação</h3>
+      <div id="matchesList"></div>
+    </div>
+
+    <div class="card">
+      <h3>Lançamentos do extrato</h3>
+      <div id="bankTxList"><p class="empty">Nenhum extrato importado ainda.</p></div>
+    </div>
+  </section>
+
+  <!-- RELATÓRIO -->
+  <section class="view" id="view-relatorio">
+    <div class="card">
+      <h3>Vendas x Contas a pagar (últimos 6 meses)</h3>
+      <div id="reportChart"></div>
+    </div>
+    <div class="card">
+      <h3>Detalhe por mês</h3>
+      <div id="reportTable"></div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  Pankekas Controle · dados salvos só neste navegador<br>
+  <button class="btn-outline btn-sm" style="width:auto; display:inline-block; margin-top:8px;" onclick="exportBackup()">Exportar backup</button>
+  <button class="btn-outline btn-sm" style="width:auto; display:inline-block; margin-top:8px;" onclick="document.getElementById('importFile').click()">Importar backup</button>
+  <input type="file" id="importFile" accept="application/json" style="display:none;" onchange="importBackup(event)">
+</footer>
+
+<!-- ORDER DETAIL SHEET -->
+<div class="overlay" id="orderOverlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h3 id="orderSheetTitle">Pedido</h3>
+      <button onclick="closeOrderDetail()">✕</button>
+    </div>
+    <div class="sheet-body" id="orderSheetBody"></div>
+    <div class="sheet-foot" id="orderSheetFoot"></div>
+  </div>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+/* ---------------- HELPERS ---------------- */
+function parseBRL(s){ return parseFloat(String(s).replace(/\./g,'').replace(',','.')) || 0; }
+function fmtBRL(v){ return 'R$ ' + (v||0).toFixed(2).replace('.',','); }
+function parseDateBR(s){
+  const m = String(s).match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if(!m) return new Date();
+  return new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1]));
+}
+
+/* ---------------- STORAGE ---------------- */
+function loadOrders(){ try{ return JSON.parse(localStorage.getItem('pkctrl_orders')||'[]'); }catch(e){ return []; } }
+function saveOrders(o){ localStorage.setItem('pkctrl_orders', JSON.stringify(o)); }
+function loadBankTx(){ try{ return JSON.parse(localStorage.getItem('pkctrl_banktx')||'[]'); }catch(e){ return []; } }
+function saveBankTx(t){ localStorage.setItem('pkctrl_banktx', JSON.stringify(t)); }
+
+/* ---------------- ORDER TEXT PARSER ---------------- */
+function parseOrderText(text){
+  const get = (regex) => { const m = text.match(regex); return m ? m[1].trim() : null; };
+
+  const dataHoraStr = get(/🕐\s*([\d\/]+\s*às\s*[\d:]+)/);
+  const cliente = get(/\*Cliente:\*\s*(.+)/);
+  const cpf = get(/\*CPF:\*\s*(.+)/);
+  const whats = get(/\*WhatsApp:\*\s*(.+)/);
+  const modo = get(/\*Modo:\*\s*(.+)/);
+  const enderecoLine = get(/\*Endereço:\*\s*(.+)/);
+  let endereco = '', bairro = '';
+  if(enderecoLine){
+    const parts = enderecoLine.split(' — ');
+    endereco = (parts[0]||'').trim();
+    bairro = (parts[1]||'').trim();
+  }
+  const taxaStr = get(/\*Taxa de entrega:\*\s*R\$\s*([\d.,]+)/);
+  const geoLink = get(/\*Localização \(mapa\):\*\s*(\S+)/);
+  const subtotalStr = get(/\*Subtotal:\s*R\$\s*([\d.,]+)\*/);
+  const totalComEntregaStr = get(/\*Total com entrega:\s*R\$\s*([\d.,]+)\*/);
+  const pagamentoLine = get(/\*Pagamento:\*\s*(.+)/);
+  const obs = get(/\*Observações:\*\s*(.+)/);
+
+  if(!cliente || !subtotalStr){
+    return {error: 'Não consegui reconhecer esse texto como um pedido válido. Confira se colou a mensagem completa (do "Novo pedido" até o final).'};
+  }
+
+  const itens = [];
+  const itensMatch = text.match(/\*Itens:\*\n([\s\S]*?)\n\n\*Subtotal/);
+  if(itensMatch){
+    itensMatch[1].split('\n').filter(l=>l.trim()).forEach(line => {
+      const m = line.match(/^(\d+)x\s+(.+?)\s+—\s+R\$\s*([\d.,]+)/);
+      if(m) itens.push({qty:parseInt(m[1]), desc:m[2].trim(), valor: parseBRL(m[3])});
+    });
+  }
+
+  const subtotal = parseBRL(subtotalStr);
+  const taxaEntrega = taxaStr ? parseBRL(taxaStr) : null;
+  const totalGeral = totalComEntregaStr ? parseBRL(totalComEntregaStr) : subtotal;
+
+  let pagMetodo = 'Outro';
+  if(pagamentoLine){
+    if(pagamentoLine.startsWith('PIX')) pagMetodo = 'PIX';
+    else if(pagamentoLine.startsWith('Dinheiro')) pagMetodo = 'Dinheiro';
+    else if(pagamentoLine.startsWith('Cartão')) pagMetodo = 'Cartão';
+  }
+
+  let orderDateTime = new Date();
+  if(dataHoraStr){
+    const m = dataHoraStr.match(/(\d{2})\/(\d{2})\/(\d{4})\s*às\s*(\d{2}):(\d{2})/);
+    if(m) orderDateTime = new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1]), parseInt(m[4]), parseInt(m[5]));
+  }
+
+  return {
+    error: null,
+    cliente, cpf, whats,
+    modo: modo || 'Entrega',
+    endereco, bairro,
+    taxaEntrega, geoLink,
+    itens, subtotal, totalGeral,
+    pagMetodo, pagDetalhe: pagamentoLine || '',
+    obs: obs || '',
+    orderDateTime: orderDateTime.toISOString(),
+    rawText: text
+  };
+}
+
+function addOrderFromPaste(){
+  const text = document.getElementById('pasteBox').value.trim();
+  const msgEl = document.getElementById('pasteMsg');
+  if(!text){ msgEl.innerHTML = '<div class="msg-line msg-err">Cole o texto do pedido primeiro.</div>'; return; }
+  const parsed = parseOrderText(text);
+  if(parsed.error){ msgEl.innerHTML = `<div class="msg-line msg-err">${parsed.error}</div>`; return; }
+
+  const orders = loadOrders();
+  if(orders.find(o => o.rawText === parsed.rawText)){
+    msgEl.innerHTML = '<div class="msg-line msg-err">Esse pedido já foi adicionado antes.</div>';
+    return;
+  }
+
+  const order = Object.assign({
+    id: 'o' + Date.now() + Math.random().toString(36).slice(2,6),
+    status: 'novo',
+    recebido: false,
+    dataRecebimento: null,
+    conciliado: false,
+    addedAt: new Date().toISOString()
+  }, parsed);
+
+  orders.push(order);
+  saveOrders(orders);
+  document.getElementById('pasteBox').value = '';
+  msgEl.innerHTML = '<div class="msg-line msg-ok">Pedido adicionado! ✅</div>';
+  renderOrdersList();
+  renderFinanceiro();
+  renderMatches();
+}
+
+/* ---------------- PEDIDOS TAB ---------------- */
+const ORDER_STATUSES = [
+  {k:'novo', label:'Novo'},
+  {k:'preparo', label:'Em preparo'},
+  {k:'saiu', label:'Saiu p/ entrega'},
+  {k:'entregue', label:'Entregue'},
+  {k:'cancelado', label:'Cancelado'}
+];
+let orderFilter = 'todos';
+
+function renderOrderFilters(){
+  const row = document.getElementById('orderFilterRow');
+  const opts = [{k:'todos', label:'Todos'}].concat(ORDER_STATUSES);
+  row.innerHTML = opts.map(o=>`<button class="${orderFilter===o.k?'active':''}" onclick="setOrderFilter('${o.k}')">${o.label}</button>`).join('');
+}
+function setOrderFilter(k){ orderFilter = k; renderOrdersList(); }
+
+function renderOrdersList(){
+  renderOrderFilters();
+  const orders = loadOrders().slice().sort((a,b)=> new Date(a.orderDateTime) - new Date(b.orderDateTime));
+  const filtered = orderFilter==='todos' ? orders : orders.filter(o=>o.status===orderFilter);
+  const list = document.getElementById('ordersList');
+  if(filtered.length===0){ list.innerHTML = '<p class="empty">Nenhum pedido aqui ainda.</p>'; return; }
+  list.innerHTML = filtered.map((o) => {
+    const idx = orders.indexOf(o);
+    const itemsSum = o.itens.map(i=>`${i.qty}x ${i.desc}`).join(', ');
+    const statusLabel = (ORDER_STATUSES.find(s=>s.k===o.status)||{}).label || o.status;
+    return `
+      <div class="order-row" onclick="openOrderDetail('${o.id}')">
+        <div class="info">
+          <div class="num">#${idx+1} · ${new Date(o.orderDateTime).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
+          <div class="name">${o.cliente}</div>
+          <div class="items-sum">${itemsSum}</div>
+        </div>
+        <div class="right">
+          <div class="val">${fmtBRL(o.totalGeral)}</div>
+          <div class="badge ${o.status}">${statusLabel}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ---------------- ORDER DETAIL ---------------- */
+let currentOrderId = null;
+let orderEditMode = false;
+function openOrderDetail(id){
+  currentOrderId = id;
+  orderEditMode = false;
+  renderOrderDetail();
+  document.getElementById('orderOverlay').classList.add('show');
+}
+function closeOrderDetail(){ document.getElementById('orderOverlay').classList.remove('show'); }
+function toggleEditOrder(){ orderEditMode = !orderEditMode; renderOrderDetail(); }
+
+function renderOrderDetail(){
+  const orders = loadOrders();
+  const o = orders.find(x=>x.id===currentOrderId);
+  if(!o) return;
+  document.getElementById('orderSheetTitle').textContent = o.cliente;
+
+  if(orderEditMode){ renderOrderEditForm(o); return; }
+
+  const itemsHtml = o.itens.map(i=>`<div class="detail-row"><span class="k">${i.qty}x ${i.desc}</span><span class="v">${fmtBRL(i.valor)}</span></div>`).join('');
+
+  document.getElementById('orderSheetBody').innerHTML = `
+    <div class="detail-row"><span class="k">Data/hora</span><span class="v">${new Date(o.orderDateTime).toLocaleString('pt-BR')}</span></div>
+    <div class="detail-row"><span class="k">CPF</span><span class="v">${o.cpf||'-'}</span></div>
+    <div class="detail-row"><span class="k">WhatsApp</span><span class="v">${o.whats||'-'}</span></div>
+    <div class="detail-row"><span class="k">Modo</span><span class="v">${o.modo}</span></div>
+    ${o.modo==='Entrega' ? `<div class="detail-row"><span class="k">Endereço</span><span class="v">${o.endereco} — ${o.bairro}</span></div>` : ''}
+    ${o.geoLink ? `<div class="detail-row"><span class="k">Mapa</span><span class="v"><a href="${o.geoLink}" target="_blank" style="color:var(--blue);">Ver localização</a></span></div>` : ''}
+    <h3 style="margin-top:14px;">Itens</h3>
+    ${itemsHtml}
+    <div class="detail-row"><span class="k">Subtotal</span><span class="v">${fmtBRL(o.subtotal)}</span></div>
+    ${o.taxaEntrega!==null ? `<div class="detail-row"><span class="k">Taxa entrega</span><span class="v">${fmtBRL(o.taxaEntrega)}</span></div>` : ''}
+    <div class="detail-row"><span class="k"><b>Total</b></span><span class="v"><b>${fmtBRL(o.totalGeral)}</b></span></div>
+    <div class="detail-row"><span class="k">Pagamento</span><span class="v">${o.pagDetalhe}</span></div>
+    ${o.obs ? `<div class="detail-row"><span class="k">Obs.</span><span class="v">${o.obs}</span></div>` : ''}
+
+    <h3 style="margin-top:14px;">Status do pedido</h3>
+    <div class="status-grid" id="statusGrid"></div>
+
+    <h3 style="margin-top:14px;">Financeiro</h3>
+    <div class="detail-row"><span class="k">Situação</span><span class="v"><span class="badge ${o.recebido?'recebido':'pendente'}">${o.recebido?'Recebido':'Pendente'}</span></span></div>
+    ${o.recebido ? `<div class="detail-row"><span class="k">Recebido em</span><span class="v">${new Date(o.dataRecebimento).toLocaleDateString('pt-BR')}${o.conciliado?' (via extrato)':' (baixa manual)'}</span></div>` : ''}
+  `;
+
+  document.getElementById('statusGrid').innerHTML = ORDER_STATUSES.map(s=>`<button class="${o.status===s.k?'sel':''}" onclick="setOrderStatus('${o.id}','${s.k}')">${s.label}</button>`).join('');
+
+  let footHtml = '';
+  if(o.status==='saiu' && o.whats){
+    footHtml += `<button class="btn btn-green" style="width:100%; margin-bottom:8px;" onclick="sendSaiuMessage('${o.id}')">📲 Enviar mensagem de saída</button>`;
+  }
+  if(!o.recebido){
+    footHtml += `<button class="btn btn-outline" onclick="markRecebido('${o.id}')">Dar baixa manual (marcar como recebido)</button>`;
+  } else {
+    footHtml += `<button class="btn btn-outline" onclick="unmarkRecebido('${o.id}')">Desfazer recebimento</button>`;
+  }
+  footHtml += `<div style="display:flex; gap:8px; margin-top:8px;">
+    <button class="btn btn-outline" style="flex:1;" onclick="toggleEditOrder()">✏️ Editar</button>
+    <button class="btn" style="flex:1; background:var(--red); color:#fff;" onclick="deleteOrder('${o.id}')">🗑 Excluir</button>
+  </div>`;
+  document.getElementById('orderSheetFoot').innerHTML = footHtml;
+}
+
+function renderOrderEditForm(o){
+  const itemsRowsHtml = o.itens.map((it, idx) => `
+    <div style="display:flex; gap:6px; margin-top:8px; align-items:center;">
+      <input type="text" value="${it.qty}" style="width:44px; margin-top:0;" onchange="editItemField(${idx},'qty',this.value)">
+      <input type="text" value="${(it.desc||'').replace(/"/g,'&quot;')}" style="flex:1; margin-top:0;" onchange="editItemField(${idx},'desc',this.value)">
+      <input type="text" value="${String(it.valor).replace('.',',')}" style="width:72px; margin-top:0;" onchange="editItemField(${idx},'valor',this.value)">
+      <button onclick="removeEditItem(${idx})" style="background:none; border:none; color:var(--red); font-size:17px; flex:0 0 auto;">🗑</button>
+    </div>
+  `).join('');
+
+  document.getElementById('orderSheetBody').innerHTML = `
+    <label>Nome do cliente</label>
+    <input type="text" id="editCliente" value="${(o.cliente||'').replace(/"/g,'&quot;')}">
+    <label>CPF</label>
+    <input type="text" id="editCpf" value="${o.cpf||''}">
+    <label>WhatsApp</label>
+    <input type="text" id="editWhats" value="${o.whats||''}">
+    <label>Modo</label>
+    <select id="editModo">
+      <option value="Retirada" ${o.modo==='Retirada'?'selected':''}>Retirada</option>
+      <option value="Entrega" ${o.modo==='Entrega'?'selected':''}>Entrega</option>
+    </select>
+    <label>Endereço</label>
+    <input type="text" id="editEndereco" value="${(o.endereco||'').replace(/"/g,'&quot;')}">
+    <label>Bairro</label>
+    <input type="text" id="editBairro" value="${(o.bairro||'').replace(/"/g,'&quot;')}">
+
+    <h3 style="margin-top:14px;">Itens</h3>
+    <div id="editItemsList">${itemsRowsHtml}</div>
+    <button class="btn btn-outline btn-sm" style="margin-top:10px;" onclick="addEditItem()">+ Adicionar item</button>
+
+    <label style="margin-top:14px;">Taxa de entrega (R$, deixe vazio se não houver)</label>
+    <input type="text" id="editTaxa" value="${o.taxaEntrega!==null && o.taxaEntrega!==undefined ? String(o.taxaEntrega).replace('.',',') : ''}">
+
+    <label>Forma de pagamento</label>
+    <input type="text" id="editPagDetalhe" value="${(o.pagDetalhe||'').replace(/"/g,'&quot;')}">
+
+    <label>Observações</label>
+    <input type="text" id="editObs" value="${(o.obs||'').replace(/"/g,'&quot;')}">
+  `;
+
+  document.getElementById('orderSheetFoot').innerHTML = `
+    <button class="btn btn-primary" onclick="saveOrderEdits('${o.id}')">Salvar alterações</button>
+    <button class="btn btn-outline" onclick="toggleEditOrder()">Cancelar</button>
+  `;
+}
+
+function addEditItem(){
+  const orders = loadOrders();
+  const o = orders.find(x=>x.id===currentOrderId);
+  o.itens.push({qty:1, desc:'Novo item', valor:0});
+  saveOrders(orders);
+  renderOrderEditForm(o);
+}
+function removeEditItem(idx){
+  const orders = loadOrders();
+  const o = orders.find(x=>x.id===currentOrderId);
+  o.itens.splice(idx,1);
+  saveOrders(orders);
+  renderOrderEditForm(o);
+}
+function editItemField(idx, field, value){
+  const orders = loadOrders();
+  const o = orders.find(x=>x.id===currentOrderId);
+  if(field==='qty') o.itens[idx].qty = parseInt(value)||1;
+  else if(field==='valor') o.itens[idx].valor = parseFloat(String(value).replace(',','.'))||0;
+  else o.itens[idx].desc = value;
+  saveOrders(orders);
+}
+
+function saveOrderEdits(id){
+  const orders = loadOrders();
+  const o = orders.find(x=>x.id===id);
+  if(!o) return;
+  o.cliente = document.getElementById('editCliente').value.trim() || o.cliente;
+  o.cpf = document.getElementById('editCpf').value.trim();
+  o.whats = document.getElementById('editWhats').value.trim();
+  o.modo = document.getElementById('editModo').value;
+  o.endereco = document.getElementById('editEndereco').value.trim();
+  o.bairro = document.getElementById('editBairro').value.trim();
+  const taxaRaw = document.getElementById('editTaxa').value.trim();
+  o.taxaEntrega = taxaRaw ? parseBRL(taxaRaw) : null;
+  o.pagDetalhe = document.getElementById('editPagDetalhe').value.trim();
+  o.obs = document.getElementById('editObs').value.trim();
+
+  o.subtotal = o.itens.reduce((s,i)=> s + i.valor, 0);
+  o.totalGeral = o.subtotal + (o.taxaEntrega||0);
+
+  saveOrders(orders);
+  orderEditMode = false;
+  renderOrderDetail();
+  renderOrdersList();
+  renderFinanceiro();
+  renderMatches();
+}
+
+function deleteOrder(id){
+  if(!confirm('Tem certeza que quer excluir esse pedido? Essa ação não pode ser desfeita.')) return;
+  let orders = loadOrders();
+  orders = orders.filter(o=>o.id!==id);
+  saveOrders(orders);
+  closeOrderDetail();
+  renderOrdersList();
+  renderFinanceiro();
+  renderMatches();
+}
+
+function setOrderStatus(id, status){
+  const orders = loadOrders();
+  const o = orders.find(x=>x.id===id);
+  if(!o) return;
+  o.status = status;
+  saveOrders(orders);
+  renderOrderDetail();
+  renderOrdersList();
+}
+
+function sendSaiuMessage(id){
+  const orders = loadOrders();
+  const o = orders.find(x=>x.id===id);
+  if(!o || !o.whats) return;
+  const digits = o.whats.replace(/\D/g,'');
+  const phone = digits.length<=11 ? '55'+digits : digits;
+  const primeiroNome = (o.cliente||'').trim().split(' ')[0];
+  const msg = `Oi, ${primeiroNome}! 🥞\n\nSeu pedido da Pankekas Gourmet acabou de sair para entrega! 🛵💨\n\nObrigada por escolher a gente, já já chega aí. ❤️`;
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function markRecebido(id){
+  const orders = loadOrders();
+  const o = orders.find(x=>x.id===id);
+  if(!o) return;
+  o.recebido = true;
+  o.dataRecebimento = new Date().toISOString();
+  o.conciliado = false;
+  saveOrders(orders);
+  renderOrderDetail();
+  renderFinanceiro();
+  renderOrdersList();
+}
+function unmarkRecebido(id){
+  const orders = loadOrders();
+  const o = orders.find(x=>x.id===id);
+  if(!o) return;
+  o.recebido = false;
+  o.dataRecebimento = null;
+  o.conciliado = false;
+  saveOrders(orders);
+  renderOrderDetail();
+  renderFinanceiro();
+  renderOrdersList();
+}
+
+/* ---------------- FINANCEIRO TAB ---------------- */
+let finFilter = 'pendente';
+function renderFinFilters(){
+  const row = document.getElementById('finFilterRow');
+  const opts = [{k:'todos',label:'Todos'},{k:'pendente',label:'Pendentes'},{k:'recebido',label:'Recebidos'}];
+  row.innerHTML = opts.map(o=>`<button class="${finFilter===o.k?'active':''}" onclick="setFinFilter('${o.k}')">${o.label}</button>`).join('');
+}
+function setFinFilter(k){ finFilter=k; renderFinanceiro(); }
+
+function renderFinanceiro(){
+  renderFinFilters();
+  const orders = loadOrders();
+  const pendente = orders.filter(o=>!o.recebido && o.status!=='cancelado').reduce((s,o)=>s+o.totalGeral,0);
+  const recebido = orders.filter(o=>o.recebido).reduce((s,o)=>s+o.totalGeral,0);
+  document.getElementById('sumPendente').textContent = fmtBRL(pendente);
+  document.getElementById('sumRecebido').textContent = fmtBRL(recebido);
+
+  let filtered = orders.filter(o=>o.status!=='cancelado');
+  if(finFilter==='pendente') filtered = filtered.filter(o=>!o.recebido);
+  if(finFilter==='recebido') filtered = filtered.filter(o=>o.recebido);
+  filtered.sort((a,b)=> new Date(b.orderDateTime)-new Date(a.orderDateTime));
+
+  const list = document.getElementById('receivablesList');
+  if(filtered.length===0){ list.innerHTML = '<p class="empty">Nada por aqui.</p>'; return; }
+  list.innerHTML = filtered.map(o=>`
+    <div class="order-row" onclick="openOrderDetail('${o.id}')">
+      <div class="info">
+        <div class="num">${new Date(o.orderDateTime).toLocaleDateString('pt-BR')} · ${o.pagMetodo}</div>
+        <div class="name">${o.cliente}</div>
+      </div>
+      <div class="right">
+        <div class="val">${fmtBRL(o.totalGeral)}</div>
+        <div class="badge ${o.recebido?'recebido':'pendente'}">${o.recebido?'Recebido':'Pendente'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ---------------- CONCILIAÇÃO TAB ---------------- */
+async function importBankPdf(){
+  const fileInput = document.getElementById('bankFile');
+  const msgEl = document.getElementById('bankMsg');
+  if(!fileInput.files.length){ msgEl.innerHTML = '<div class="msg-line msg-err">Escolha um arquivo PDF primeiro.</div>'; return; }
+  msgEl.innerHTML = '<div class="msg-line">Lendo o extrato...</div>';
+  try{
+    const file = fileInput.files[0];
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+    let allLines = [];
+    for(let p=1; p<=pdf.numPages; p++){
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      const rows = {};
+      content.items.forEach(it=>{
+        const y = Math.round(it.transform[5]);
+        if(!rows[y]) rows[y]=[];
+        rows[y].push(it.str);
+      });
+      Object.keys(rows).map(Number).sort((a,b)=>b-a).forEach(y=>{ allLines.push(rows[y].join(' ')); });
+    }
+
+    const transactions = [];
+    const dateRe = /^\D*(\d{2}\/\d{2}\/\d{4})/;
+    const valueRe = /(-?\d{1,3}(?:\.\d{3})*,\d{2})\s*[CD]?\s*$/;
+    allLines.forEach(line => {
+      const dm = line.match(dateRe);
+      const vm = line.match(valueRe);
+      if(dm && vm){
+        const desc = line.replace(dateRe,'').replace(valueRe,'').trim();
+        const valor = parseBRL(vm[1]);
+        if(desc && Math.abs(valor) > 0){
+          transactions.push({
+            id: 'tx'+Date.now()+Math.random().toString(36).slice(2,6),
+            data: dm[1], descricao: desc, valor: valor, matchedOrderId: null
+          });
+        }
+      }
+    });
+
+    if(transactions.length===0){
+      msgEl.innerHTML = '<div class="msg-line msg-err">Não consegui reconhecer lançamentos automaticamente nesse PDF (o layout pode ser diferente do esperado). Você ainda pode dar baixa manual em cada pedido, direto no Financeiro.</div>';
+      return;
+    }
+
+    const existing = loadBankTx();
+    saveBankTx(existing.concat(transactions));
+    msgEl.innerHTML = `<div class="msg-line msg-ok">${transactions.length} lançamento(s) importado(s)! ✅</div>`;
+    fileInput.value = '';
+    renderBankTxList();
+    renderMatches();
+  } catch(err){
+    msgEl.innerHTML = '<div class="msg-line msg-err">Erro ao ler o PDF: ' + err.message + '</div>';
+  }
+}
+
+function renderBankTxList(){
+  const txs = loadBankTx().slice().sort((a,b)=> b.data.localeCompare(a.data));
+  const el = document.getElementById('bankTxList');
+  if(txs.length===0){ el.innerHTML = '<p class="empty">Nenhum extrato importado ainda.</p>'; return; }
+  el.innerHTML = txs.map(t=>`
+    <div class="bank-row ${t.matchedOrderId?'matched':''}">
+      <div>
+        <div>${t.descricao}</div>
+        <div class="d">${t.data}${t.matchedOrderId ? ' · conciliado ✓' : ''}</div>
+      </div>
+      <div class="amt">${fmtBRL(t.valor)}</div>
+    </div>
+  `).join('');
+}
+
+function renderMatches(){
+  const orders = loadOrders().filter(o=>!o.recebido && o.status!=='cancelado');
+  const txs = loadBankTx().filter(t=>!t.matchedOrderId);
+  const suggestions = [];
+  orders.forEach(o=>{
+    const match = txs.find(t=> Math.abs(t.valor - o.totalGeral) < 0.01);
+    if(match) suggestions.push({order:o, tx:match});
+  });
+  const card = document.getElementById('matchesCard');
+  const list = document.getElementById('matchesList');
+  if(suggestions.length===0){ card.style.display='none'; return; }
+  card.style.display='block';
+  list.innerHTML = suggestions.map(s=>`
+    <div class="match-suggest">
+      <div><b>${s.order.cliente}</b> — ${fmtBRL(s.order.totalGeral)}</div>
+      <div style="color:var(--cream-dim);">Extrato: ${s.tx.descricao} · ${s.tx.data}</div>
+      <button class="btn btn-green btn-sm" onclick="confirmMatch('${s.order.id}','${s.tx.id}')">Confirmar conciliação</button>
+    </div>
+  `).join('');
+}
+
+function confirmMatch(orderId, txId){
+  const orders = loadOrders();
+  const o = orders.find(x=>x.id===orderId);
+  const txs = loadBankTx();
+  const t = txs.find(x=>x.id===txId);
+  if(!o || !t) return;
+  o.recebido = true;
+  o.conciliado = true;
+  o.dataRecebimento = parseDateBR(t.data).toISOString();
+  t.matchedOrderId = orderId;
+  saveOrders(orders);
+  saveBankTx(txs);
+  renderBankTxList();
+  renderMatches();
+  renderFinanceiro();
+  renderOrdersList();
+}
+
+/* ---------------- BACKUP ---------------- */
+function exportBackup(){
+  const data = { orders: loadOrders(), bankTx: loadBankTx(), payables: loadPayables(), exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'pankekas-controle-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importBackup(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try{
+      const data = JSON.parse(ev.target.result);
+      if(data.orders) saveOrders(data.orders);
+      if(data.bankTx) saveBankTx(data.bankTx);
+      if(data.payables) savePayables(data.payables);
+      renderOrdersList(); renderFinanceiro(); renderBankTxList(); renderMatches(); renderPayablesList(); renderReport();
+      alert('Backup importado com sucesso!');
+    } catch(err){ alert('Erro ao importar backup: ' + err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+/* ---------------- CONTAS A PAGAR ---------------- */
+function loadPayables(){ try{ return JSON.parse(localStorage.getItem('pkctrl_payables')||'[]'); }catch(e){ return []; } }
+function savePayables(p){ localStorage.setItem('pkctrl_payables', JSON.stringify(p)); }
+
+let payMonthOffset = 0;
+
+function getMonthKey(offset){
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth()+offset);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+function getMonthLabel(offset){
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth()+offset);
+  return d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+}
+
+function togglePayTipoFields(){
+  const tipo = document.getElementById('payTipo').value;
+  document.getElementById('payRecorrenteFields').style.display = tipo==='recorrente' ? 'block':'none';
+  document.getElementById('payUnicoFields').style.display = tipo==='unico' ? 'block':'none';
+}
+
+function addPayable(){
+  const desc = document.getElementById('payDesc').value.trim();
+  const valor = parseBRL(document.getElementById('payValor').value.trim());
+  const tipo = document.getElementById('payTipo').value;
+  const categoria = document.getElementById('payCategoria').value.trim() || 'Outro';
+  const msgEl = document.getElementById('payMsg');
+
+  if(!desc || !valor){ msgEl.innerHTML = '<div class="msg-line msg-err">Preencha descrição e valor.</div>'; return; }
+
+  const payable = { id:'p'+Date.now()+Math.random().toString(36).slice(2,6), descricao:desc, valor, tipo, categoria, pagamentos:{} };
+  if(tipo==='recorrente'){
+    const dia = parseInt(document.getElementById('payDia').value) || 1;
+    payable.diaVencimento = Math.min(Math.max(dia,1),31);
+  } else {
+    const data = document.getElementById('payData').value;
+    if(!data){ msgEl.innerHTML = '<div class="msg-line msg-err">Informe a data de vencimento.</div>'; return; }
+    payable.dataVencimento = data;
+  }
+
+  const payables = loadPayables();
+  payables.push(payable);
+  savePayables(payables);
+
+  document.getElementById('payDesc').value='';
+  document.getElementById('payValor').value='';
+  document.getElementById('payDia').value='';
+  document.getElementById('payData').value='';
+  document.getElementById('payCategoria').value='';
+  msgEl.innerHTML = '<div class="msg-line msg-ok">Conta adicionada! ✅</div>';
+  renderPayablesList();
+  renderReport();
+}
+
+function shiftPayMonth(delta){ payMonthOffset += delta; renderPayablesList(); }
+
+function payableDueDateForMonth(p, monthKey){
+  if(p.tipo==='recorrente'){
+    const [y,m] = monthKey.split('-').map(Number);
+    const lastDay = new Date(y, m, 0).getDate();
+    const day = Math.min(p.diaVencimento, lastDay);
+    return new Date(y, m-1, day);
+  } else {
+    const d = new Date(p.dataVencimento+'T00:00:00');
+    const dKey = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    return dKey===monthKey ? d : null;
+  }
+}
+
+function renderPayablesList(){
+  const monthKey = getMonthKey(payMonthOffset);
+  document.getElementById('payMonthLabel').textContent = getMonthLabel(payMonthOffset);
+  const payables = loadPayables();
+
+  const rows = [];
+  payables.forEach(p=>{
+    const due = payableDueDateForMonth(p, monthKey);
+    if(!due) return;
+    const pag = p.pagamentos[monthKey] || null;
+    rows.push({payable:p, monthKey, due, pago: pag ? pag.pago : false});
+  });
+  rows.sort((a,b)=> a.due - b.due);
+
+  const pendente = rows.filter(r=>!r.pago).reduce((s,r)=>s+r.payable.valor,0);
+  const pago = rows.filter(r=>r.pago).reduce((s,r)=>s+r.payable.valor,0);
+  document.getElementById('payPendenteMes').textContent = fmtBRL(pendente);
+  document.getElementById('payPagoMes').textContent = fmtBRL(pago);
+
+  const list = document.getElementById('payablesList');
+  if(rows.length===0){ list.innerHTML = '<p class="empty">Nenhuma conta a pagar nesse mês.</p>'; return; }
+  list.innerHTML = rows.map(r=>`
+    <div class="order-row" onclick="togglePayablePaid('${r.payable.id}','${r.monthKey}')">
+      <div class="info">
+        <div class="num">Vence dia ${String(r.due.getDate()).padStart(2,'0')} · ${r.payable.categoria}${r.payable.tipo==='recorrente' ? ' · recorrente' : ''}</div>
+        <div class="name">${r.payable.descricao}</div>
+      </div>
+      <div class="right">
+        <div class="val">${fmtBRL(r.payable.valor)}</div>
+        <div class="badge ${r.pago?'recebido':'pendente'}">${r.pago?'Pago':'Pendente'}</div>
+      </div>
+      <button onclick="event.stopPropagation(); deletePayable('${r.payable.id}')" style="background:none;border:none;color:var(--red);font-size:15px; flex:0 0 auto;">🗑</button>
+    </div>
+  `).join('');
+}
+
+function togglePayablePaid(payableId, monthKey){
+  const payables = loadPayables();
+  const p = payables.find(x=>x.id===payableId);
+  if(!p) return;
+  const current = p.pagamentos[monthKey];
+  if(current && current.pago){
+    if(!confirm(`Desfazer o pagamento de "${p.descricao}" desse mês?`)) return;
+    delete p.pagamentos[monthKey];
+  } else {
+    if(!confirm(`Marcar "${p.descricao}" como pago nesse mês?`)) return;
+    p.pagamentos[monthKey] = {pago:true, dataPagamento: new Date().toISOString()};
+  }
+  savePayables(payables);
+  renderPayablesList();
+  renderReport();
+}
+
+function deletePayable(id){
+  if(!confirm('Excluir essa conta a pagar (e todo o histórico dela)? Não pode ser desfeito.')) return;
+  let payables = loadPayables();
+  payables = payables.filter(p=>p.id!==id);
+  savePayables(payables);
+  renderPayablesList();
+  renderReport();
+}
+
+/* ---------------- RELATÓRIO ---------------- */
+function renderReport(){
+  const orders = loadOrders();
+  const payables = loadPayables();
+  const months = [];
+  for(let i=5;i>=0;i--) months.push(getMonthKey(-i));
+
+  const data = months.map(mk=>{
+    const vendas = orders.filter(o=> o.status!=='cancelado' && o.orderDateTime.slice(0,7)===mk).reduce((s,o)=>s+o.totalGeral,0);
+    let pagamentos = 0;
+    payables.forEach(p=>{ if(payableDueDateForMonth(p, mk)) pagamentos += p.valor; });
+    return {mk, vendas, pagamentos};
+  });
+
+  const maxVal = Math.max(1, ...data.map(d=>Math.max(d.vendas, d.pagamentos)));
+
+  const chartHtml = data.map(d=>{
+    const [y,m] = d.mk.split('-');
+    const label = new Date(y,m-1,1).toLocaleDateString('pt-BR',{month:'short'});
+    const vH = Math.round((d.vendas/maxVal)*100);
+    const pH = Math.round((d.pagamentos/maxVal)*100);
+    return `
+      <div style="flex:1; text-align:center;">
+        <div style="display:flex; align-items:flex-end; justify-content:center; gap:4px; height:110px;">
+          <div style="width:14px; height:${vH}%; background:var(--orange); border-radius:3px 3px 0 0;"></div>
+          <div style="width:14px; height:${pH}%; background:var(--red); border-radius:3px 3px 0 0;"></div>
+        </div>
+        <div style="font-size:10.5px; color:var(--cream-dim); margin-top:5px; text-transform:capitalize;">${label}</div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('reportChart').innerHTML = `
+    <div style="display:flex; gap:6px; margin-bottom:8px;">${chartHtml}</div>
+    <div style="display:flex; gap:14px; font-size:11.5px; justify-content:center;">
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--orange);border-radius:2px;"></span> Vendas</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--red);border-radius:2px;"></span> Contas a pagar</span>
+    </div>
+  `;
+
+  document.getElementById('reportTable').innerHTML = data.slice().reverse().map(d=>{
+    const [y,m] = d.mk.split('-');
+    const label = new Date(y,m-1,1).toLocaleDateString('pt-BR',{month:'long', year:'numeric'});
+    const saldo = d.vendas - d.pagamentos;
+    return `
+      <div class="detail-row">
+        <span class="k" style="text-transform:capitalize;">${label}</span>
+        <span class="v">
+          <div>Vendas: ${fmtBRL(d.vendas)}</div>
+          <div style="color:var(--red);">Contas: ${fmtBRL(d.pagamentos)}</div>
+          <div style="color:${saldo>=0?'var(--green)':'var(--red)'}; font-weight:700;">Saldo: ${fmtBRL(saldo)}</div>
+        </span>
+      </div>`;
+  }).join('');
+}
+
+/* ---------------- TABS & INIT ---------------- */
+document.querySelectorAll('#tabNav button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#tabNav button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+document.getElementById('orderOverlay').addEventListener('click', e=>{ if(e.target.id==='orderOverlay') closeOrderDetail(); });
+
+renderOrdersList();
+renderFinanceiro();
+renderBankTxList();
+renderMatches();
+renderPayablesList();
+renderReport();
+</script>
+</body>
+</html>
